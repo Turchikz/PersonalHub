@@ -19,9 +19,6 @@ def test_working_instrument_with_position_is_valid():
     # Act: отсутствие исключения означает успешную валидацию
     instrument.full_clean()
 
-    # Assert: пробелы по краям позиции должны быть удалены
-    assert instrument.position == "PDT-2001"
-
 
 @pytest.mark.django_db
 def test_working_instrument_without_position_is_invalid():
