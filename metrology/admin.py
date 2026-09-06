@@ -2,6 +2,7 @@ from django.contrib import admin
 
 from .models import Instrument
 
+
 @admin.register(Instrument)
 class InstrumentAdmin(admin.ModelAdmin):
     list_display = ("name", "type_model", "serial_number", "position", "functional_unit", "status")

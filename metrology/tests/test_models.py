@@ -4,18 +4,19 @@ from django.core.exceptions import ValidationError
 from metrology.models import Instrument
 
 
-@pytest.mark.django_db 
+@pytest.mark.django_db
 def test_working_instrument_with_position_is_valid():
-    # Arrange: создаётся корректное СИ
+    # Arrange
     instrument = Instrument(
         name="Датчик давления",
         type_model="ЭМИС БАР 143",
         serial_number="15190",
         position="PDT-2001",
         functional_unit=Instrument.FunctionalUnit.BIK,
-        status=Instrument.Status.WORK
+        status=Instrument.Status.WORK,
     )
-    # Act: запускается полная валидацию модели
+
+    # Act: отсутствие исключения означает успешную валидацию
     instrument.full_clean()
 
     # Assert: пробелы по краям позиции должны быть удалены

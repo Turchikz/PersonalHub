@@ -2,7 +2,6 @@ from django.core.exceptions import ValidationError
 from django.db import models
 
 
-
 class Instrument(models.Model):
     class FunctionalUnit(models.TextChoices):
         BIL = "BIL", "БИЛ"
@@ -36,8 +35,8 @@ class Instrument(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ["name", "type_model", "serial_number"]
-        constraints = [
+        ordering = ["name", "type_model", "serial_number"]  # noqa: RUF012
+        constraints = [  # noqa: RUF012
             models.UniqueConstraint(
                 fields=["type_model", "serial_number"],
                 name="unique_instrument_type_model_serial_number",
@@ -54,7 +53,9 @@ class Instrument(models.Model):
 
         if self.status == self.Status.WORK:
             if not self.position:
-                raise ValidationError("Укажите место установки")
+                raise ValidationError(
+                    {"position": "Укажите место установки"}
+                )
             
         else:
             self.position = None
