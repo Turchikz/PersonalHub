@@ -1,5 +1,6 @@
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.utils import timezone
 
 
 class Instrument(models.Model):
@@ -62,3 +63,58 @@ class Instrument(models.Model):
 
     def __str__(self):
         return f"{self.name} {self.type_model} №{self.serial_number}"
+    
+
+class Verification(models.Model):
+    instrument = models.ForeignKey(
+        Instrument,
+        on_delete=models.PROTECT,
+        related_name="verifications",
+    )
+
+    verification_date = models.DateField()
+    valid_until = models.DateField()    
+    next_verification_date = models.DateField(blank=True, null=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-verification_date"]
+
+    def clean(self):
+        super().clean()
+
+        errors = {}
+
+        if (
+            self.verification_date
+            and self.verification_date > timezone.localdate()
+        ):
+            errors["verification_date"] = (
+                "Дата поверки не может быть позже текущей даты."
+            )
+
+        if (
+            self.verification_date
+            and self.valid_until
+            and self.valid_until <= self.verification_date
+        ):
+            errors["valid_until"] = (
+                "Дата окончания должна быть позже даты поверки."
+            )
+
+        if (
+            self.verification_date
+            and self.next_verification_date
+            and self.next_verification_date <= self.verification_date
+        ):
+            errors["next_verification_date"] = (
+                "Следующая плановая поверка должна быть позже даты поверки."
+            )
+
+        if errors:
+            raise ValidationError(errors)
+        
+    def __str__(self):
+        return f"{self.instrument.name} {self.instrument.type_model} №{self.instrument.serial_number} — {self.verification_date}"
