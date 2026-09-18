@@ -299,3 +299,89 @@ def test_delete_instrument_with_verification_returns_409():
     # Assert
     assert response.status_code == status.HTTP_409_CONFLICT
     assert Instrument.objects.filter(id=instrument.id).exists()
+
+
+@pytest.mark.django_db
+def test_create_valid_verification(instrument):
+    # Arrange
+    client = APIClient()
+
+    today = timezone.localdate()
+
+    data = {
+        "instrument": instrument.id,
+        "verification_date": today.isoformat(),
+        "valid_until": (today+timedelta(days=365)).isoformat(),
+        "next_verification_date": None,
+    }
+
+    # Act
+    response = client.post("/api/verifications/", data, format="json",)
+
+    # Assert: проверяем ответ API
+    assert response.status_code == status.HTTP_201_CREATED
+    assert response.data["instrument"] == instrument.id
+    assert response.data["verification_date"] == today.isoformat()
+    assert response.data["valid_until"] == (today+timedelta(days=365)).isoformat()
+    assert response.data["next_verification_date"] is None
+
+    # Assert: проверяем сохранённую запись
+    verification = Verification.objects.get(id=response.data["id"])
+
+    assert verification.instrument == instrument
+    assert verification.verification_date == today
+    assert verification.valid_until == today + timedelta(days=365)
+    assert verification.next_verification_date is None
+
+
+@pytest.mark.django_db
+def test_create_verification_with_future_date_returns_400(instrument):
+    # Arrange
+    client = APIClient()
+
+    today = timezone.localdate()
+
+    data = {
+        "instrument": instrument.id,
+        "verification_date": (today + timedelta(days=1)).isoformat(),
+        "valid_until": (today + timedelta(days=365)).isoformat(),
+        "next_verification_date": None,
+    }
+
+    # Act
+    response = client.post("/api/verifications/", data, format="json",)
+
+    # Assert: проверяем ответ API
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert "verification_date" in response.data
+    assert not Verification.objects.exists()
+
+
+@pytest.mark.django_db
+def test_patch_verification_with_invalid_valid_until_returns_400(instrument):
+    # Arrange
+    client = APIClient()
+
+    today = timezone.localdate()
+
+    verification = Verification.objects.create(
+        instrument=instrument,
+        verification_date=today,
+        valid_until=today + timedelta(days=365),
+        next_verification_date=None,
+    )
+
+    # Act
+    response = client.patch(
+        f"/api/verifications/{verification.id}/",
+        {"valid_until": today.isoformat()},
+        format="json",
+    )
+
+    # Assert проверка ответа по API
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert "valid_until" in response.data
+
+    # Assert проверка состояния базы данных
+    verification.refresh_from_db()
+    assert verification.valid_until == today + timedelta(days=365)

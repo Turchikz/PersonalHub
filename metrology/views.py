@@ -3,8 +3,8 @@ from rest_framework.response import Response
 from django.db.models.deletion import ProtectedError
 
 
-from .models import Instrument
-from .serializers import InstrumentSerializer
+from .models import Instrument, Verification
+from .serializers import InstrumentSerializer, VerificationSerializer
 
 
 class InstrumentViewSet(viewsets.ModelViewSet):
@@ -27,3 +27,8 @@ class InstrumentViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_409_CONFLICT,
             )
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class VerificationViewSet(viewsets.ModelViewSet):
+    queryset = Verification.objects.all()
+    serializer_class = VerificationSerializer
