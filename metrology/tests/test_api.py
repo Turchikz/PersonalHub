@@ -385,3 +385,150 @@ def test_patch_verification_with_invalid_valid_until_returns_400(instrument):
     # Assert проверка состояния базы данных
     verification.refresh_from_db()
     assert verification.valid_until == today + timedelta(days=365)
+
+
+@pytest.mark.django_db
+def test_filter_instruments_by_status():
+    # Arrange
+    client = APIClient()
+
+    spare_instrument = Instrument.objects.create(
+        name="Датчик давления",
+        type_model="ЭМИС БАР 143",
+        serial_number="15208",
+        position=None,
+        functional_unit=Instrument.FunctionalUnit.BIK,
+        status=Instrument.Status.SPARE,
+    )
+    working_instrument = Instrument.objects.create(
+        name="Датчик давления",
+        type_model="ЭМИС БАР 143",
+        serial_number="15209",
+        position="PDT-2001",
+        functional_unit=Instrument.FunctionalUnit.BIK,
+        status=Instrument.Status.WORK,
+    )
+
+    # Act
+    response = client.get("/api/instruments/?status=WORK")
+
+    # Assert
+    assert response.status_code == status.HTTP_200_OK
+    assert {item["id"] for item in response.data} == {working_instrument.id}
+
+
+@pytest.mark.django_db
+def test_filter_instruments_by_functional_unit():
+    # Arrange
+    client = APIClient()
+
+    bik_instrument = Instrument.objects.create(
+        name="Датчик давления",
+        type_model="ЭМИС БАР 143",
+        serial_number="15208",
+        position=None,
+        functional_unit=Instrument.FunctionalUnit.BIK,
+        status=Instrument.Status.SPARE,
+    )
+    bil_instrument = Instrument.objects.create(
+        name="Датчик давления",
+        type_model="ЭМИС БАР 143",
+        serial_number="15209",
+        position="PDT-2001",
+        functional_unit=Instrument.FunctionalUnit.BIL,
+        status=Instrument.Status.WORK,
+    )
+
+    # Act
+    response = client.get("/api/instruments/?functional_unit=BIK")
+
+    # Assert
+    assert response.status_code == status.HTTP_200_OK
+    assert {item["id"] for item in response.data} == {bik_instrument.id}
+
+
+@pytest.mark.django_db
+def test_filter_instruments_by_functional_unit_and_status():
+    # Arrange
+    client = APIClient()
+
+    bik_work_instrument = Instrument.objects.create(
+        name="Датчик давления",
+        type_model="ЭМИС БАР 143",
+        serial_number="15208",
+        position="PDT-2009",
+        functional_unit=Instrument.FunctionalUnit.BIK,
+        status=Instrument.Status.WORK,
+    )
+    bik_spare_instrument = Instrument.objects.create(
+        name="Датчик давления",
+        type_model="ЭМИС БАР 143",
+        serial_number="15209",
+        position=None,
+        functional_unit=Instrument.FunctionalUnit.BIK,
+        status=Instrument.Status.SPARE,
+    )
+    bil_work_instrument = Instrument.objects.create(
+        name="Датчик давления",
+        type_model="ЭМИС БАР 143",
+        serial_number="15210",
+        position="PDT-2010",
+        functional_unit=Instrument.FunctionalUnit.BIL,
+        status=Instrument.Status.WORK,
+    )
+
+    # Act
+    response = client.get(
+        "/api/instruments/?functional_unit=BIK&status=WORK"
+    )
+
+    # Assert
+    assert response.status_code == status.HTTP_200_OK
+    assert {item["id"] for item in response.data} == {bik_work_instrument.id}
+
+
+@pytest.mark.django_db
+def test_filter_verifications_by_instrument():
+   # Arrange
+    client = APIClient()
+
+    instrument_1 = Instrument.objects.create(
+        name="Датчик давления",
+        type_model="ЭМИС БАР 143",
+        serial_number="15209",
+        position="PDT-2010",
+        functional_unit=Instrument.FunctionalUnit.BIK,
+        status=Instrument.Status.WORK,
+    )
+    instrument_2 = Instrument.objects.create(
+        name="Датчик давления",
+        type_model="ЭМИС БАР 143",
+        serial_number="15210",
+        position=None,
+        functional_unit=Instrument.FunctionalUnit.BIK,
+        status=Instrument.Status.SPARE,
+    )
+
+    today = timezone.localdate()
+    verification_1 = Verification.objects.create(
+        instrument=instrument_1,
+        verification_date=today,
+        valid_until=today + timedelta(days=365),
+        next_verification_date = None,
+    )
+
+    verification_2 = Verification.objects.create(
+        instrument=instrument_2,
+        verification_date=today,
+        valid_until=today + timedelta(days=365),
+        next_verification_date=None,
+    )
+
+    # Act
+    response = client.get(
+        f"/api/verifications/?instrument={instrument_1.id}"
+    )
+
+    # Assert
+    assert response.status_code == status.HTTP_200_OK
+    assert {item["id"] for item in response.data} == {verification_1.id}
