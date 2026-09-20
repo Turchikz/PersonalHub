@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'django_filters',
     'metrology',
+    'dashboard',
 ]
 
 MIDDLEWARE = [

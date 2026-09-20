@@ -1,0 +1,66 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <title>PersonalHub</title>
+    <link rel="stylesheet" href="{% static 'dashboard/dashboard.css' %}">
+</head>
+</body>    <header class="dashboard-header">
+        <h1>PersonalHub</h1>
+
+        <button
+            type="button"
+            id="theme-toggle"
+            aria-label="Переключить цветовую тему"
+        >
+            Тёмная тема
+        </button>
+    </header>
+
+    <p>Добро пожаловать на дашборд!</p>
+    <div class="events-container">
+        {% for event in events %}
+        <article
+            class="event-card"
+            data-target="{{ event.target_datetime|date:'c' }}"
+        >
+            <h2>{{ event.title }}</h2>
+
+            <p>{{ event.target_datetime|date:"d.m.Y H:i" }}</p>
+
+            <div class="countdown">
+
+                <div>
+                    <span class="days">0</span>
+                    <span>Дней</span>
+                </div>
+
+                <div>
+                    <span class="hours">0</span>
+                    <span>Часов</span>
+                </div>
+
+                <div>
+                    <span class="minutes">0</span>
+                    <span>Минут</span>
+                </div>
+
+                <div>
+                    <span class="seconds">0</span>
+                    <span>Секунд</span>
+                </div>
+
+            </div>
+
+        </article>
+    {% empty %}
+        <h2>Событий пока нет.</h2>
+    {% endfor %}
+</div>
+<script src="{% static 'dashboard/dashboard.js' %}"></script>
+
+</body>
+</html>
