@@ -1,6 +1,7 @@
 import pytest
 
 from datetime import timedelta
+from typing import Any, cast
 
 from django.utils import timezone
 
@@ -26,7 +27,8 @@ def test_valid_working_instrument_data_passes_serializer_validation():
 
     # Assert
     assert is_valid, serializer.errors
-    assert serializer.validated_data["position"] == "PDT-2001"
+    validated_data = cast(dict[str, Any], serializer.validated_data)
+    assert validated_data["position"] == "PDT-2001"
 
 
 @pytest.mark.django_db
@@ -69,7 +71,8 @@ def test_spare_instrument_position_is_cleared_by_serializer():
 
     # Assert
     assert is_valid, serializer.errors
-    assert serializer.validated_data["position"] is None
+    validated_data = cast(dict[str, Any], serializer.validated_data)
+    assert validated_data["position"] is None
 
 
 @pytest.mark.django_db
@@ -91,7 +94,8 @@ def test_valid_verification_passes_serializer_validation(instrument):
 
     # Assert
     assert is_valid, serializer.errors
-    assert serializer.validated_data["instrument"] == instrument
+    validated_data = cast(dict[str, Any], serializer.validated_data)
+    assert validated_data["instrument"] == instrument
 
 
 @pytest.mark.django_db
@@ -113,7 +117,8 @@ def test_future_verification_date_fails_serializer_validation(instrument):
     # Assert
     assert not is_valid
     assert "verification_date" in serializer.errors
-    assert str(serializer.errors["verification_date"][0]) == (
+    errors = cast(dict[str, list[Any]], serializer.errors)
+    assert str(errors["verification_date"][0]) == (
         "Дата поверки не может быть позже текущей даты."
     )
 
@@ -137,7 +142,8 @@ def test_valid_until_equal_to_verification_date_fails_validation(instrument):
     # Assert
     assert not is_valid
     assert "valid_until" in serializer.errors
-    assert str(serializer.errors["valid_until"][0]) == (
+    errors = cast(dict[str, list[Any]], serializer.errors)
+    assert str(errors["valid_until"][0]) == (
         "Дата окончания должна быть позже даты поверки."
     )
 
@@ -161,6 +167,7 @@ def test_next_verification_date_equal_to_verification_date_fails_validation(inst
     # Assert
     assert not is_valid
     assert "next_verification_date" in serializer.errors
-    assert str(serializer.errors["next_verification_date"][0]) == (
+    errors = cast(dict[str, list[Any]], serializer.errors)
+    assert str(errors["next_verification_date"][0]) == (
         "Следующая плановая поверка должна быть позже даты поверки."
     )

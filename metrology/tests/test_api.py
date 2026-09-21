@@ -9,8 +9,6 @@ from django.utils import timezone
 from metrology.models import Instrument, Verification
 
 
-
-
 @pytest.mark.django_db
 def test_create_working_instrument():
     # Arrange
@@ -79,7 +77,15 @@ def test_spare_instrument_position_is_cleared():
 
 
 @pytest.mark.django_db
-def test_instrument_change_status_work_to_repair_is_valid():
+@pytest.mark.parametrize(
+    "instrument_status",
+    [
+        Instrument.Status.REPAIR,
+        Instrument.Status.SPARE,
+        Instrument.Status.VERIFICATION,
+    ],
+)
+def test_instrument_change_status_work_to_repair_spare_verification_is_valid(instrument_status):
     # Arrange
     client = APIClient()
 
@@ -94,20 +100,20 @@ def test_instrument_change_status_work_to_repair_is_valid():
 
     # Act
     response = client.patch(
-        f"/api/instruments/{instrument.id}/",
-        {"status": "REPAIR"},
-        format="json",
-    )
+            f"/api/instruments/{instrument.pk}/",
+            {"status": instrument_status},
+            format="json",
+        )
 
     # Assert: проверяем ответ API
     assert response.status_code == status.HTTP_200_OK
-    assert response.data["status"] == Instrument.Status.REPAIR
+    assert response.data["status"] == instrument_status
     assert response.data["position"] is None
 
     # Assert: проверяем фактическое состояние базы
     instrument.refresh_from_db()
 
-    assert instrument.status == Instrument.Status.REPAIR
+    assert instrument.status == instrument_status
     assert instrument.position is None
 
 
@@ -127,7 +133,7 @@ def test_instrument_change_status_repair_to_work_without_position_is_invalid():
 
     # Act
     response = client.patch(
-        f"/api/instruments/{instrument.id}/",
+        f"/api/instruments/{instrument.pk}/",
         {"status": "WORK"},
         format="json",
     )
@@ -159,7 +165,7 @@ def test_instrument_change_status_repair_to_work_with_position_is_valid():
 
     # Act
     response = client.patch(
-        f"/api/instruments/{instrument.id}/",
+        f"/api/instruments/{instrument.pk}/",
         {
             "status": Instrument.Status.WORK,
             "position": " PDT-2008 "
@@ -210,7 +216,7 @@ def test_get_instrument_list():
     # Assert проверяем содержимое ответа API
     returned_ids = {item["id"] for item in response.data}
 
-    assert returned_ids == {instrument_1.id, instrument_2.id}
+    assert returned_ids == {instrument_1.pk, instrument_2.pk}
 
 
 @pytest.mark.django_db
@@ -227,11 +233,11 @@ def test_get_existing_instrument_returns_200():
     )
 
     # Act
-    response = client.get(f"/api/instruments/{instrument.id}/")
+    response = client.get(f"/api/instruments/{instrument.pk}/")
 
     # Assert проверяем ответ API
     assert response.status_code == status.HTTP_200_OK
-    assert response.data["id"] == instrument.id
+    assert response.data["id"] == instrument.pk
     assert response.data["serial_number"] == instrument.serial_number
     assert response.data["status"] == instrument.status
 
@@ -263,11 +269,11 @@ def test_delete_instrument():
     )
 
     # Act
-    response = client.delete(f"/api/instruments/{instrument.id}/")
+    response = client.delete(f"/api/instruments/{instrument.pk}/")
 
     # Assert
     assert response.status_code == status.HTTP_204_NO_CONTENT
-    assert not Instrument.objects.filter(id=instrument.id).exists()
+    assert not Instrument.objects.filter(id=instrument.pk).exists()
 
 
 @pytest.mark.django_db
@@ -294,11 +300,11 @@ def test_delete_instrument_with_verification_returns_409():
     )
 
     # Act
-    response = client.delete(f"/api/instruments/{instrument.id}/")
+    response = client.delete(f"/api/instruments/{instrument.pk}/")
 
     # Assert
     assert response.status_code == status.HTTP_409_CONFLICT
-    assert Instrument.objects.filter(id=instrument.id).exists()
+    assert Instrument.objects.filter(id=instrument.pk).exists()
 
 
 @pytest.mark.django_db
@@ -309,7 +315,7 @@ def test_create_valid_verification(instrument):
     today = timezone.localdate()
 
     data = {
-        "instrument": instrument.id,
+        "instrument": instrument.pk,
         "verification_date": today.isoformat(),
         "valid_until": (today+timedelta(days=365)).isoformat(),
         "next_verification_date": None,
@@ -320,7 +326,7 @@ def test_create_valid_verification(instrument):
 
     # Assert: проверяем ответ API
     assert response.status_code == status.HTTP_201_CREATED
-    assert response.data["instrument"] == instrument.id
+    assert response.data["instrument"] == instrument.pk
     assert response.data["verification_date"] == today.isoformat()
     assert response.data["valid_until"] == (today+timedelta(days=365)).isoformat()
     assert response.data["next_verification_date"] is None
@@ -342,7 +348,7 @@ def test_create_verification_with_future_date_returns_400(instrument):
     today = timezone.localdate()
 
     data = {
-        "instrument": instrument.id,
+        "instrument": instrument.pk,
         "verification_date": (today + timedelta(days=1)).isoformat(),
         "valid_until": (today + timedelta(days=365)).isoformat(),
         "next_verification_date": None,
@@ -373,7 +379,7 @@ def test_patch_verification_with_invalid_valid_until_returns_400(instrument):
 
     # Act
     response = client.patch(
-        f"/api/verifications/{verification.id}/",
+        f"/api/verifications/{verification.pk}/",
         {"valid_until": today.isoformat()},
         format="json",
     )
@@ -414,7 +420,7 @@ def test_filter_instruments_by_status():
 
     # Assert
     assert response.status_code == status.HTTP_200_OK
-    assert {item["id"] for item in response.data} == {working_instrument.id}
+    assert {item["id"] for item in response.data} == {working_instrument.pk}
 
 
 @pytest.mark.django_db
@@ -444,7 +450,7 @@ def test_filter_instruments_by_functional_unit():
 
     # Assert
     assert response.status_code == status.HTTP_200_OK
-    assert {item["id"] for item in response.data} == {bik_instrument.id}
+    assert {item["id"] for item in response.data} == {bik_instrument.pk}
 
 
 @pytest.mark.django_db
@@ -484,7 +490,7 @@ def test_filter_instruments_by_functional_unit_and_status():
 
     # Assert
     assert response.status_code == status.HTTP_200_OK
-    assert {item["id"] for item in response.data} == {bik_work_instrument.id}
+    assert {item["id"] for item in response.data} == {bik_work_instrument.pk}
 
 
 @pytest.mark.django_db
@@ -526,9 +532,9 @@ def test_filter_verifications_by_instrument():
 
     # Act
     response = client.get(
-        f"/api/verifications/?instrument={instrument_1.id}"
+        f"/api/verifications/?instrument={instrument_1.pk}"
     )
 
     # Assert
     assert response.status_code == status.HTTP_200_OK
-    assert {item["id"] for item in response.data} == {verification_1.id}
+    assert {item["id"] for item in response.data} == {verification_1.pk}
