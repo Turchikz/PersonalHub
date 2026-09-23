@@ -10,9 +10,8 @@ from metrology.models import Instrument, Verification
 
 
 @pytest.mark.django_db
-def test_create_working_instrument():
+def test_create_working_instrument(authenticated_client):
     # Arrange
-    client = APIClient()
     data = {
         "name": "Датчик давления",
         "type_model": "ЭМИС БАР 143",
@@ -23,7 +22,7 @@ def test_create_working_instrument():
     }
 
     # Act
-    response = client.post("/api/instruments/", data, format="json")
+    response = authenticated_client.post("/api/instruments/", data, format="json")
 
     # Assert
     assert response.status_code == status.HTTP_201_CREATED
@@ -32,9 +31,8 @@ def test_create_working_instrument():
 
 
 @pytest.mark.django_db
-def test_create_working_instrument_without_position_is_invalid():
+def test_create_working_instrument_without_position_is_invalid(authenticated_client):
     # Arrange
-    client = APIClient()
     data = {
         "name": "Датчик давления",
         "type_model": "ЭМИС БАР 143",
@@ -44,7 +42,7 @@ def test_create_working_instrument_without_position_is_invalid():
     }
 
     # Act
-    response = client.post("/api/instruments/", data, format="json")
+    response = authenticated_client.post("/api/instruments/", data, format="json")
 
     # Assert
     assert response.status_code == status.HTTP_400_BAD_REQUEST
@@ -53,9 +51,8 @@ def test_create_working_instrument_without_position_is_invalid():
 
 
 @pytest.mark.django_db
-def test_spare_instrument_position_is_cleared():
+def test_spare_instrument_position_is_cleared(authenticated_client):
     # Arrange
-    client = APIClient()
     data = {
         "name": "Датчик давления",
         "type_model": "ЭМИС БАР 143",
@@ -66,7 +63,7 @@ def test_spare_instrument_position_is_cleared():
     }
 
     # Act
-    response = client.post("/api/instruments/", data, format='json')
+    response = authenticated_client.post("/api/instruments/", data, format='json')
 
     # Assert
     assert response.status_code == status.HTTP_201_CREATED
@@ -79,16 +76,18 @@ def test_spare_instrument_position_is_cleared():
 @pytest.mark.django_db
 @pytest.mark.parametrize(
     "instrument_status",
+
     [
         Instrument.Status.REPAIR,
         Instrument.Status.SPARE,
         Instrument.Status.VERIFICATION,
     ],
 )
-def test_instrument_change_status_work_to_repair_spare_verification_is_valid(instrument_status):
+def test_instrument_change_status_work_to_repair_spare_verification_is_valid(
+    instrument_status,
+    authenticated_client
+    ):
     # Arrange
-    client = APIClient()
-
     instrument = Instrument.objects.create(
         name="Датчик давления",
         type_model="ЭМИС БАР 143",
@@ -99,7 +98,7 @@ def test_instrument_change_status_work_to_repair_spare_verification_is_valid(ins
     )
 
     # Act
-    response = client.patch(
+    response = authenticated_client.patch(
             f"/api/instruments/{instrument.pk}/",
             {"status": instrument_status},
             format="json",
@@ -118,10 +117,8 @@ def test_instrument_change_status_work_to_repair_spare_verification_is_valid(ins
 
 
 @pytest.mark.django_db
-def test_instrument_change_status_repair_to_work_without_position_is_invalid():
+def test_instrument_change_status_repair_to_work_without_position_is_invalid(authenticated_client):
     # Arrange
-    client = APIClient()
-
     instrument = Instrument.objects.create(
         name="Датчик давления",
         type_model="ЭМИС БАР 143",
@@ -132,7 +129,7 @@ def test_instrument_change_status_repair_to_work_without_position_is_invalid():
     )
 
     # Act
-    response = client.patch(
+    response = authenticated_client.patch(
         f"/api/instruments/{instrument.pk}/",
         {"status": "WORK"},
         format="json",
@@ -150,10 +147,8 @@ def test_instrument_change_status_repair_to_work_without_position_is_invalid():
 
 
 @pytest.mark.django_db
-def test_instrument_change_status_repair_to_work_with_position_is_valid():
+def test_instrument_change_status_repair_to_work_with_position_is_valid(authenticated_client):
     # Arrange
-    client = APIClient()
-
     instrument = Instrument.objects.create(
         name="Датчик давления",
         type_model="ЭМИС БАР 143",
@@ -164,7 +159,7 @@ def test_instrument_change_status_repair_to_work_with_position_is_valid():
     )
 
     # Act
-    response = client.patch(
+    response = authenticated_client.patch(
         f"/api/instruments/{instrument.pk}/",
         {
             "status": Instrument.Status.WORK,
@@ -255,10 +250,8 @@ def test_get_nonexistent_instrument_returns_404():
 
 
 @pytest.mark.django_db
-def test_delete_instrument():
+def test_delete_instrument(authenticated_client):
     # Arrange
-    client = APIClient()
-
     instrument = Instrument.objects.create(
         name="Датчик давления",
         type_model="ЭМИС БАР 143",
@@ -269,26 +262,17 @@ def test_delete_instrument():
     )
 
     # Act
-    response = client.delete(f"/api/instruments/{instrument.pk}/")
+    response = authenticated_client.delete(f"/api/instruments/{instrument.pk}/")
 
     # Assert
-    assert response.status_code == status.HTTP_204_NO_CONTENT
-    assert not Instrument.objects.filter(id=instrument.pk).exists()
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+    assert Instrument.objects.filter(id=instrument.pk).exists()
 
 
 @pytest.mark.django_db
-def test_delete_instrument_with_verification_returns_409():
+def test_delete_instrument_with_verification_returns_409(instrument,
+                                                         admin_client):
     # Arrange
-    client = APIClient()
-
-    instrument = Instrument.objects.create(
-        name="Датчик давления",
-        type_model="ЭМИС БАР 143",
-        serial_number="15207",
-        position=None,
-        functional_unit=Instrument.FunctionalUnit.BIK,
-        status=Instrument.Status.SPARE,
-    )
 
     today = timezone.localdate()
 
@@ -300,18 +284,23 @@ def test_delete_instrument_with_verification_returns_409():
     )
 
     # Act
-    response = client.delete(f"/api/instruments/{instrument.pk}/")
+    response = admin_client.delete(f"/api/instruments/{instrument.pk}/")
 
     # Assert
     assert response.status_code == status.HTTP_409_CONFLICT
+    assert response.data["detail"] == (
+        "Нельзя удалить средство измерений, "
+        "для которого существуют поверки."
+    )
     assert Instrument.objects.filter(id=instrument.pk).exists()
 
 
 @pytest.mark.django_db
-def test_create_valid_verification(instrument):
+def test_create_valid_verification(
+    instrument,
+    authenticated_client
+    ):
     # Arrange
-    client = APIClient()
-
     today = timezone.localdate()
 
     data = {
@@ -322,7 +311,7 @@ def test_create_valid_verification(instrument):
     }
 
     # Act
-    response = client.post("/api/verifications/", data, format="json",)
+    response = authenticated_client.post("/api/verifications/", data, format="json",)
 
     # Assert: проверяем ответ API
     assert response.status_code == status.HTTP_201_CREATED
@@ -341,10 +330,11 @@ def test_create_valid_verification(instrument):
 
 
 @pytest.mark.django_db
-def test_create_verification_with_future_date_returns_400(instrument):
+def test_create_verification_with_future_date_returns_400(
+    instrument,
+    authenticated_client
+    ):
     # Arrange
-    client = APIClient()
-
     today = timezone.localdate()
 
     data = {
@@ -355,7 +345,7 @@ def test_create_verification_with_future_date_returns_400(instrument):
     }
 
     # Act
-    response = client.post("/api/verifications/", data, format="json",)
+    response = authenticated_client.post("/api/verifications/", data, format="json",)
 
     # Assert: проверяем ответ API
     assert response.status_code == status.HTTP_400_BAD_REQUEST
@@ -364,10 +354,11 @@ def test_create_verification_with_future_date_returns_400(instrument):
 
 
 @pytest.mark.django_db
-def test_patch_verification_with_invalid_valid_until_returns_400(instrument):
+def test_patch_verification_with_invalid_valid_until_returns_400(
+    instrument,
+    authenticated_client
+    ):
     # Arrange
-    client = APIClient()
-
     today = timezone.localdate()
 
     verification = Verification.objects.create(
@@ -378,7 +369,7 @@ def test_patch_verification_with_invalid_valid_until_returns_400(instrument):
     )
 
     # Act
-    response = client.patch(
+    response = authenticated_client.patch(
         f"/api/verifications/{verification.pk}/",
         {"valid_until": today.isoformat()},
         format="json",
@@ -538,3 +529,186 @@ def test_filter_verifications_by_instrument():
     # Assert
     assert response.status_code == status.HTTP_200_OK
     assert {item["id"] for item in response.data} == {verification_1.pk}
+
+
+@pytest.mark.django_db
+def test_anonymous_user_cannot_create_instrument():
+    client = APIClient()
+    data = {
+        "name": "Датчик давления",
+        "type_model": "ЭМИС БАР 143",
+        "serial_number": "16001",
+        "position": "PDT-3001",
+        "functional_unit": "BIK",
+        "status": "WORK",
+    }
+
+    response = client.post(
+        "/api/instruments/",
+        data=data,
+        format="json",
+    )
+
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+    assert not Instrument.objects.filter(
+        serial_number="16001"
+    ).exists()
+
+
+@pytest.mark.django_db
+def test_create_working_instrument_authenticated(authenticated_client):
+    data = {
+        "name": "Датчик давления",
+        "type_model": "ЭМИС БАР 143",
+        "serial_number": "16001",
+        "position": "PDT-3001",
+        "functional_unit": "BIK",
+        "status": "WORK",
+    }
+
+    response = authenticated_client.post(
+        "/api/instruments/",
+        data=data,
+        format="json",
+    )
+
+    assert response.status_code == status.HTTP_201_CREATED
+    assert Instrument.objects.filter(
+        serial_number="16001"
+    ).exists()
+
+
+@pytest.mark.django_db
+def test_admin_can_delete_instrument(admin_client):
+    instrument = Instrument.objects.create(
+        name="Датчик давления",
+        type_model="ЭМИС БАР 143",
+        serial_number="16002",
+        position=None,
+        functional_unit=Instrument.FunctionalUnit.BIK,
+        status=Instrument.Status.SPARE,
+    )
+
+    response = admin_client.delete(
+        f"/api/instruments/{instrument.pk}/"
+    )
+
+    assert response.status_code == status.HTTP_204_NO_CONTENT
+    assert not Instrument.objects.filter(pk=instrument.pk).exists()
+
+
+@pytest.mark.django_db
+def test_regular_user_cannot_delete_instrument(
+    authenticated_client,
+):
+    instrument = Instrument.objects.create(
+        name="Датчик давления",
+        type_model="ЭМИС БАР 143",
+        serial_number="16003",
+        position=None,
+        functional_unit=Instrument.FunctionalUnit.BIK,
+        status=Instrument.Status.SPARE,
+    )
+
+    response = authenticated_client.delete(
+        f"/api/instruments/{instrument.pk}/"
+    )
+
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+    assert Instrument.objects.filter(pk=instrument.pk).exists()
+
+
+@pytest.mark.django_db
+def test_anonymous_user_cannot_create_verification(instrument):
+    client = APIClient()
+
+    today = timezone.localdate()
+    data = {
+        "instrument": instrument.pk,
+        "verification_date": today.isoformat(),
+        "valid_until": (today + timedelta(days=365)).isoformat(),
+        "next_verification_date": None,
+    }
+
+    response = client.post(
+        "/api/verifications/",
+        data=data,
+        format="json",
+        )
+
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+    assert not Verification.objects.filter(instrument=instrument.pk).exists()
+
+
+@pytest.mark.django_db
+def test_authenticated_user_can_create_verification(
+    instrument,
+    authenticated_client,
+):
+    today = timezone.localdate()
+    data = {
+        "instrument": instrument.pk,
+        "verification_date": today.isoformat(),
+        "valid_until": (today + timedelta(days=365)).isoformat(),
+        "next_verification_date": None,
+    }
+
+    response = authenticated_client.post(
+        "/api/verifications/",
+        data=data,
+        format="json",
+        )
+
+    assert response.status_code == status.HTTP_201_CREATED
+    assert response.data["instrument"] == instrument.pk
+
+    verification = Verification.objects.get(pk=response.data["id"])
+
+    assert verification.instrument == instrument
+    assert verification.verification_date == today
+    assert verification.valid_until == today + timedelta(days=365)
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    ("client_fixture", "expected_status", "verification_exists"),
+    [
+        (
+            "authenticated_client",
+            status.HTTP_403_FORBIDDEN,
+            True,
+        ),
+        (
+            "admin_client",
+            status.HTTP_204_NO_CONTENT,
+            False,
+        ),
+    ],
+)
+def test_verification_delete_permissions(
+    request,
+    instrument,
+    client_fixture,
+    expected_status,
+    verification_exists,
+):
+    today = timezone.localdate()
+
+    verification = Verification.objects.create(
+        instrument=instrument,
+        verification_date=today,
+        valid_until=today + timedelta(days=365),
+        next_verification_date=None,
+    )
+
+    client = request.getfixturevalue(client_fixture)
+
+    response = client.delete(
+        f"/api/verifications/{verification.pk}/"
+    )
+
+    assert response.status_code == expected_status
+    assert (
+        Verification.objects.filter(pk=verification.pk).exists()
+        is verification_exists
+    )
