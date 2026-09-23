@@ -1,14 +1,16 @@
+<!DOCTYPE html>
 {% load static %}
 
-<!DOCTYPE html>
+
 <html lang="ru">
 
 <head>
     <meta charset="UTF-8">
-    <title>PersonalHub</title>
+    <title>Дашбоард</title>
     <link rel="stylesheet" href="{% static 'dashboard/dashboard.css' %}">
 </head>
-</body>    <header class="dashboard-header">
+
+<header class="dashboard-header">
         <h1>PersonalHub</h1>
 
         <button
@@ -18,9 +20,10 @@
         >
             Тёмная тема
         </button>
-    </header>
-
+</header>
+<body>
     <p>Добро пожаловать на дашборд!</p>
+
     <div class="events-container">
         {% for event in events %}
         <article
@@ -60,6 +63,43 @@
         <h2>Событий пока нет.</h2>
     {% endfor %}
 </div>
+
+<section class="pomodoro">
+    <div class="pomodoro-settings">
+        <label for="work-duration">Работа, минут </label>
+        <input
+            id="work-duration"
+            type="number"
+            value="25"
+            min="1"
+            max="120"
+            required
+        >
+
+        <label for="break-duration">Отдых, минут</label>
+        <input
+            id="break-duration"
+            type="number"
+            value="5"
+            min="1"
+            max="60"
+            required
+        >
+    </div>
+
+    <div class="pomodoro-status">
+        <span>Режим</span>
+        <span id="timer-mode">Работа</span>
+    </div>
+
+    <div id="timer-display" class="pomodoro-timer">25:00</div>
+
+    <div class="pomodoro-controls">
+        <button id="timer-start" type="button">Старт</button>
+        <button id="timer-pause" type="button">Пауза</button>
+        <button id="timer-reset" type="button">Сброс</button>
+    </div>
+</section>
 <script src="{% static 'dashboard/dashboard.js' %}"></script>
 
 </body>
