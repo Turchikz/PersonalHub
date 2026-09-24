@@ -1,0 +1,53 @@
+name: Deploy to Raspberry Pi
+
+on:
+  workflow_run:
+    workflows:
+      - Django CI
+    types:
+      - completed
+    branches:
+      - main
+  workflow_dispatch: # добавялет в Github кнопку Run Workflow
+
+permissions:
+  contents: read
+
+concurrency: # защита от параллельных деплоев
+  group: production-deployment
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: >-
+        github.event_name == 'workflow_dispatch' ||
+        github.event.workflow_run.conclusion == 'success'
+    runs-on:
+      - self-hosted
+      - Linux
+      - ARM64
+      - deploy
+
+    timeout-minutes: 15
+
+    steps:
+      - name: Update repository
+        working-directory: /home/adminka/projects/PersonalHub
+        run: |
+          git fetch origin main
+          git switch main
+          git pull --ff-only origin main
+
+      - name: Validate Docker Compose
+        working-directory: /home/adminka/projects/PersonalHub
+        run: docker compose config --quiet
+
+      - name: Build and start application
+        working-directory: /home/adminka/projects/PersonalHub
+        run: docker compose up -d --build --remove-orphans
+
+      - name: Check application
+        working-directory: /home/adminka/projects/PersonalHub
+        run: |
+          docker compose exec -T web python manage.py check
+          curl --fail --retry 10 --retry-delay 3 http://127.0.0.1:8000/
