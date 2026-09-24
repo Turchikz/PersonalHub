@@ -16,6 +16,28 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
+    env:
+      POSTGRES_DB: personalhub
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: ci_postgres
+      POSTGRES_HOST: 127.0.0.1
+      POSTGRES_PORT: 5432
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: personalhub
+          POSTGRES_USER: admin
+          POSTGRES_PASSWORD: ci_postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U admin -d personalhub"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
@@ -36,6 +58,9 @@ jobs:
 
       - name: Check missing migrations
         run: python manage.py makemigrations --check --dry-run
+
+      - name: Apply migrations
+        run: python manage.py migrate --noinput
 
       - name: Run tests
         run: python -m pytest -v
