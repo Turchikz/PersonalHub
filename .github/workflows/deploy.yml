@@ -50,4 +50,17 @@ jobs:
         working-directory: /home/adminka/projects/PersonalHub
         run: |
           docker compose exec -T web python manage.py check
-          curl --fail --retry 10 --retry-delay 3 http://127.0.0.1:8000/
+
+          for attempt in {1..20}; do
+            if curl --fail --silent http://127.0.0.1:8000/ > /dev/null; then
+              echo "Application is available"
+              exit 0
+            fi
+
+            echo "Attempt ${attempt}/20 failed; waiting 3 seconds"
+            sleep 3
+          done
+
+          echo "Application did not become available"
+          docker compose logs --tail 50 web
+          exit 1
