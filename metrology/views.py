@@ -3,7 +3,6 @@ from rest_framework.authentication import (
     BasicAuthentication,
     SessionAuthentication,
 )
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models.deletion import ProtectedError

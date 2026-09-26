@@ -1,0 +1,11 @@
+[Unit]
+Description=PersonalHub PostgreSQL backup
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+User=adminka
+Group=adminka
+WorkingDirectory=/home/adminka/projects/PersonalHub
+ExecStart=/home/adminka/projects/PersonalHub/scripts/backup_postgres.sh

@@ -65,5 +65,8 @@ jobs:
       - name: Apply migrations
         run: python manage.py migrate --noinput
 
+      - name: Check backup script syntax
+        run: bash -n scripts/backup_postgres.sh
+
       - name: Run tests
         run: python -m pytest -v
