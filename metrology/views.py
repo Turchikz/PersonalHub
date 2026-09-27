@@ -6,7 +6,7 @@ from rest_framework.authentication import (
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models.deletion import ProtectedError
-
+from drf_spectacular.utils import OpenApiResponse, extend_schema
 
 from .models import Instrument, Verification
 from .permissions import MetrologyPermission
@@ -23,6 +23,23 @@ class InstrumentViewSet(viewsets.ModelViewSet):
     serializer_class = InstrumentSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["status", "functional_unit"]
+
+    @extend_schema(
+            summary="Удалить средство измерений",
+            description=("Удаляет средство измерений, если с ним "
+            "не связаны записи о поверках."
+        ),
+        responses={
+            204: OpenApiResponse(
+                description="Средство измерений удалено."
+            ),
+            409: OpenApiResponse(
+                description=("Удаление невозможно: для средства "
+                "измерений существуют поверки."
+                )
+            ),
+        },
+    )
 
     def destroy(self, request, *args, **kwargs):
         instrument = self.get_object()
