@@ -44,7 +44,7 @@ jobs:
 
       - name: Build and start application
         working-directory: /home/adminka/projects/PersonalHub
-        run: docker compose up -d --build --remove-orphans
+        run: docker compose up -d --build --remove-orphans --wait --wait-timeout 120
 
       - name: Check application
         working-directory: /home/adminka/projects/PersonalHub
