@@ -1,0 +1,62 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Редактирование события</title>
+
+    <link
+        rel="stylesheet"
+        href="{% static 'dashboard/dashboard.css' %}"
+    >
+</head>
+
+<body>
+
+    <section class="event-form-card">
+        <h1>Редактировать событие</h1>
+
+        <form method="post" class="event-form">
+            {% csrf_token %}
+
+            <div class="form-field">
+                <label for="{{ form.title.id_for_label }}">
+                    Название
+                </label>
+
+                {{ form.title }}
+
+                {% for error in form.title.errors %}
+                    <p class="form-error">{{ error }}</p>
+                {% endfor %}
+            </div>
+
+            <div class="form-field">
+                <label for="{{ form.target_datetime.id_for_label }}">
+                    Дата и время
+                </label>
+
+                {{ form.target_datetime }}
+
+                {% for error in form.target_datetime.errors %}
+                    <p class="form-error">{{ error }}</p>
+                {% endfor %}
+            </div>
+
+            <div class="form-actions">
+                <button type="submit">
+                    Сохранить
+                </button>
+
+                <a href="{% url 'home' %}">
+                    Отмена
+                </a>
+            </div>
+        </form>
+    </section>
+
+</body>
+</html>

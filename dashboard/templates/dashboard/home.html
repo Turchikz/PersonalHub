@@ -1,122 +1,293 @@
-<!DOCTYPE html>
 {% load static %}
 
-
+<!DOCTYPE html>
 <html lang="ru">
-
 <head>
     <meta charset="UTF-8">
-    <title>Дашбоард</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>PersonalHub</title>
+
     <link rel="stylesheet" href="{% static 'dashboard/dashboard.css' %}">
-    <link rel="stylesheet" href="{% static 'dashboard/speech.css' %}">
 </head>
 
-
 <body>
-<header class="dashboard-header">
-        <h1>PersonalHub</h1>
+
+<div class="page-shell">
+
+    <header class="dashboard-header">
+        <div class="dashboard-brand">
+            <h1>PersonalHub</h1>
+            <p>Персональная панель управления</p>
+        </div>
 
         <button
             type="button"
             id="theme-toggle"
+            class="theme-toggle"
             aria-label="Переключить цветовую тему"
         >
             Тёмная тема
         </button>
-</header>
-    <p>Добро пожаловать на дашборд!</p>
+    </header>
 
-    <div class="events-container">
-        {% for event in events %}
-        <article
-            class="event-card"
-            data-target="{{ event.target_datetime|date:'c' }}"
-        >
-            <h2>{{ event.title }}</h2>
 
-            <p>{{ event.target_datetime|date:"d.m.Y H:i" }}</p>
+    <main class="dashboard-main">
 
-            <div class="countdown">
+        <section class="dashboard-tools">
 
-                <div>
-                    <span class="days">0</span>
-                    <span>Дней</span>
+            <section class="panel event-form-card">
+                <div class="panel-heading">
+                    <div>
+                        <span class="panel-label">События</span>
+                        <h2>Добавить событие</h2>
+                    </div>
                 </div>
 
-                <div>
-                    <span class="hours">0</span>
-                    <span>Часов</span>
+                <form method="post" class="event-form">
+                    {% csrf_token %}
+
+                    <div class="form-field">
+                        <label for="{{ form.title.id_for_label }}">
+                            Название
+                        </label>
+
+                        {{ form.title }}
+
+                        {% for error in form.title.errors %}
+                            <p class="form-error">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+
+                    <div class="form-field">
+                        <label for="{{ form.target_datetime.id_for_label }}">
+                            Дата и время
+                        </label>
+
+                        {{ form.target_datetime }}
+
+                        {% for error in form.target_datetime.errors %}
+                            <p class="form-error">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+
+                    <button
+                        type="submit"
+                        class="primary-button"
+                    >
+                        Добавить событие
+                    </button>
+                </form>
+            </section>
+
+
+            <section class="panel pomodoro">
+
+                <div class="panel-heading">
+                    <div>
+                        <span class="panel-label">Фокус</span>
+                        <h2>Pomodoro</h2>
+                    </div>
                 </div>
 
-                <div>
-                    <span class="minutes">0</span>
-                    <span>Минут</span>
+                <div class="pomodoro-settings">
+
+                    <label for="work-duration">
+                        Работа, минут
+                    </label>
+
+                    <input
+                        id="work-duration"
+                        type="number"
+                        value="25"
+                        min="1"
+                        max="120"
+                        required
+                    >
+
+                    <label for="break-duration">
+                        Отдых, минут
+                    </label>
+
+                    <input
+                        id="break-duration"
+                        type="number"
+                        value="5"
+                        min="1"
+                        max="60"
+                        required
+                    >
+
                 </div>
 
-                <div>
-                    <span class="seconds">0</span>
-                    <span>Секунд</span>
+                <div class="pomodoro-status">
+                    <span>Режим</span>
+                    <strong id="timer-mode">Работа</strong>
                 </div>
+
+                <div
+                    id="timer-display"
+                    class="pomodoro-timer"
+                >
+                    25:00
+                </div>
+
+                <div class="pomodoro-controls">
+                    <button id="timer-start" type="button">
+                        Старт
+                    </button>
+
+                    <button id="timer-pause" type="button">
+                        Пауза
+                    </button>
+
+                    <button id="timer-reset" type="button">
+                        Сброс
+                    </button>
+                </div>
+
+            </section>
+
+        </section>
+
+
+        <section class="events-section">
+
+            <div class="section-heading">
+                <div>
+                    <span class="panel-label">Обратный отсчёт</span>
+                    <h2>События</h2>
+                </div>
+
+                <span class="event-count">
+                    {{ events|length }}
+                </span>
+            </div>
+
+
+            <div class="events-container">
+
+                {% for event in events %}
+
+                    <article
+                        class="event-card"
+                        data-target="{{ event.target_datetime|date:'c' }}"
+                    >
+
+                        <div class="event-card-content">
+
+                            <header class="event-card-header">
+                                <h3>{{ event.title }}</h3>
+
+                                <time>
+                                    {{ event.target_datetime|date:"d.m.Y H:i" }}
+                                </time>
+                            </header>
+
+
+                            <div class="countdown">
+
+                                <div>
+                                    <span class="days">0</span>
+                                    <span>Дней</span>
+                                </div>
+
+                                <div>
+                                    <span class="hours">0</span>
+                                    <span>Часов</span>
+                                </div>
+
+                                <div>
+                                    <span class="minutes">0</span>
+                                    <span>Минут</span>
+                                </div>
+
+                                <div>
+                                    <span class="seconds">0</span>
+                                    <span>Секунд</span>
+                                </div>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="event-actions">
+
+                            <a
+                                href="{% url 'edit_event' event.id %}"
+                                class="event-edit-button"
+                            >
+                                Редактировать
+                            </a>
+
+
+                            <form
+                                method="post"
+                                action="{% url 'delete_event' event.id %}"
+                                class="event-delete-form"
+                            >
+                                {% csrf_token %}
+
+                                <button
+                                    type="submit"
+                                    class="event-delete-button"
+                                    onclick="return confirm(
+                                        'Удалить событие «{{ event.title|escapejs }}»?'
+                                    );"
+                                >
+                                    Удалить
+                                </button>
+                            </form>
+
+
+                            <form
+                                method="post"
+                                action="{% url 'event_speak' event.id %}"
+                                class="countdown-speech-form"
+                            >
+                                {% csrf_token %}
+
+                                <button
+                                    type="submit"
+                                    class="speech-button"
+                                >
+                                    Озвучить
+                                </button>
+
+                                <span
+                                    class="speech-status"
+                                    aria-live="polite"
+                                ></span>
+
+                                <audio
+                                    class="speech-audio"
+                                    preload="none"
+                                ></audio>
+                            </form>
+
+                        </div>
+
+                    </article>
+
+                {% empty %}
+
+                    <div class="empty-state">
+                        <h3>Событий пока нет</h3>
+                        <p>Добавьте первое событие через форму выше.</p>
+                    </div>
+
+                {% endfor %}
 
             </div>
 
-            <form
-                class="countdown-speech-form"
-                action="{% url 'event_speak' event.pk %}"
-                method="post"
-            >
-                {% csrf_token %}
-                <button
-                    type="submit"
-                    class="speech-button"
-                    aria-label="Озвучить оставшееся время для события {{ event.title }}"
-                >Озвучить</button>
-                <p class="speech-status" role="status" aria-live="polite"></p>
-                <audio class="speech-audio" controls hidden preload="none"></audio>
-            </form>
+        </section>
 
-        </article>
-    {% empty %}
-        <h2>Событий пока нет.</h2>
-    {% endfor %}
+    </main>
+
 </div>
 
-<section class="pomodoro">
-    <div class="pomodoro-settings">
-        <label for="work-duration">Работа, минут </label>
-        <input
-            id="work-duration"
-            type="number"
-            value="25"
-            min="1"
-            max="120"
-            required
-        >
 
-        <label for="break-duration">Отдых, минут</label>
-        <input
-            id="break-duration"
-            type="number"
-            value="5"
-            min="1"
-            max="60"
-            required
-        >
-    </div>
-
-    <div class="pomodoro-status">
-        <span>Режим</span>
-        <span id="timer-mode">Работа</span>
-    </div>
-
-    <div id="timer-display" class="pomodoro-timer">25:00</div>
-
-    <div class="pomodoro-controls">
-        <button id="timer-start" type="button">Старт</button>
-        <button id="timer-pause" type="button">Пауза</button>
-        <button id="timer-reset" type="button">Сброс</button>
-    </div>
-</section>
 <script src="{% static 'dashboard/dashboard.js' %}"></script>
 <script src="{% static 'dashboard/speech.js' %}"></script>
 
