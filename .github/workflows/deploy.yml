@@ -8,7 +8,7 @@ on:
       - completed
     branches:
       - main
-  workflow_dispatch: # добавялет в Github кнопку Run Workflow
+  workflow_dispatch: # добавляет в GitHub кнопку Run Workflow
 
 permissions:
   contents: read
@@ -37,22 +37,25 @@ jobs:
           git fetch origin main
           git switch main
           git pull --ff-only origin main
+          git log -1 --format='%h %s'
 
       - name: Validate Docker Compose
         working-directory: /home/adminka/projects/PersonalHub
-        run: docker compose config --quiet
+        run: docker compose -f compose.yaml -f compose.pipertts.yaml config --quiet
 
       - name: Build and start application
         working-directory: /home/adminka/projects/PersonalHub
-        run: docker compose up -d --build --remove-orphans --wait --wait-timeout 120
+        run: >-
+          docker compose -f compose.yaml -f compose.pipertts.yaml
+          up -d --build --remove-orphans --wait --wait-timeout 300
 
       - name: Check application
         working-directory: /home/adminka/projects/PersonalHub
         run: |
-          docker compose exec -T web python manage.py check
+          docker compose -f compose.yaml -f compose.pipertts.yaml exec -T web python manage.py check
 
           for attempt in {1..20}; do
-            if curl --fail --silent http://127.0.0.1:8000/ > /dev/null; then
+            if curl --fail --silent --show-error --connect-timeout 3 --max-time 5 http://127.0.0.1:18080/health/ > /dev/null; then
               echo "Application is available"
               exit 0
             fi
@@ -62,5 +65,15 @@ jobs:
           done
 
           echo "Application did not become available"
-          docker compose logs --tail 50 web
           exit 1
+
+      - name: Show diagnostics on failure
+        if: failure()
+        working-directory: /home/adminka/projects/PersonalHub
+        run: |
+          docker compose -f compose.yaml -f compose.pipertts.yaml ps --all
+          docker compose -f compose.yaml -f compose.pipertts.yaml logs --tail 100 web pipertts db
+
+          for container in $(docker compose -f compose.yaml -f compose.pipertts.yaml ps --all --quiet); do
+            docker inspect --format '{{.Name}} healthcheck={{json .Config.Healthcheck}} health={{json .State.Health}}' "$container"
+          done
