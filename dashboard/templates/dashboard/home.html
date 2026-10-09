@@ -8,8 +8,11 @@
     <meta charset="UTF-8">
     <title>Дашбоард</title>
     <link rel="stylesheet" href="{% static 'dashboard/dashboard.css' %}">
+    <link rel="stylesheet" href="{% static 'dashboard/speech.css' %}">
 </head>
 
+
+<body>
 <header class="dashboard-header">
         <h1>PersonalHub</h1>
 
@@ -21,7 +24,6 @@
             Тёмная тема
         </button>
 </header>
-<body>
     <p>Добро пожаловать на дашборд!</p>
 
     <div class="events-container">
@@ -57,6 +59,21 @@
                 </div>
 
             </div>
+
+            <form
+                class="countdown-speech-form"
+                action="{% url 'event_speak' event.pk %}"
+                method="post"
+            >
+                {% csrf_token %}
+                <button
+                    type="submit"
+                    class="speech-button"
+                    aria-label="Озвучить оставшееся время для события {{ event.title }}"
+                >Озвучить</button>
+                <p class="speech-status" role="status" aria-live="polite"></p>
+                <audio class="speech-audio" controls hidden preload="none"></audio>
+            </form>
 
         </article>
     {% empty %}
@@ -101,6 +118,7 @@
     </div>
 </section>
 <script src="{% static 'dashboard/dashboard.js' %}"></script>
+<script src="{% static 'dashboard/speech.js' %}"></script>
 
 </body>
 </html>
