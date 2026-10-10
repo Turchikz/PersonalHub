@@ -36,5 +36,6 @@ urlpatterns = [
         name="api-docs",
     ),
     path("api/", include("metrology.urls")),
+    path("monitoring/", include("monitoring.urls")),
     path("", include("dashboard.urls")),
 ]

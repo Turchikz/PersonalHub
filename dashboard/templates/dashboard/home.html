@@ -9,6 +9,7 @@
     <title>PersonalHub</title>
 
     <link rel="stylesheet" href="{% static 'dashboard/dashboard.css' %}">
+    <link rel="stylesheet" href="{% static 'monitoring/monitoring.css' %}">
 </head>
 
 <body>
@@ -33,6 +34,12 @@
 
 
     <main class="dashboard-main">
+
+        <section id="monitor-panel" class="panel monitor-panel" data-status-url="{% url 'monitoring:status' %}">
+            {% include 'monitoring/panel.html' %}
+        </section>
+        <p id="monitor-refresh-error" class="form-error" role="status" hidden>Не удалось обновить Web Monitor. Показаны последние полученные данные.</p>
+        {{ monitor_latest_notification_id|json_script:"monitor-initial-notifications" }}
 
         <section class="dashboard-tools">
 
@@ -288,6 +295,11 @@
 </div>
 
 
+<div id="monitor-toast" class="monitor-toast" role="status" aria-live="polite" hidden>
+    <button id="monitor-toast-close" type="button" aria-label="Закрыть уведомление">×</button>
+    <span id="monitor-toast-text"></span>
+</div>
+<script src="{% static 'monitoring/monitoring.js' %}"></script>
 <script src="{% static 'dashboard/dashboard.js' %}"></script>
 <script src="{% static 'dashboard/speech.js' %}"></script>
 

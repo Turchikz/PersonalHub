@@ -1,0 +1,58 @@
+<div class="panel-heading">
+    <div><span class="panel-label">Подключение Raspberry Pi</span><h2>Web Monitor</h2></div>
+    {% if request.user.is_staff %}
+        <a class="event-edit-button" href="{% url 'admin:monitoring_monitor_changelist' %}">Настройки</a>
+    {% endif %}
+</div>
+<p class="monitor-hint">Проверки выполняются с Raspberry Pi через его текущее подключение.</p>
+{% for monitor in monitors %}
+    <article class="monitor-card" data-state="{{ monitor.display_state }}">
+        <div class="monitor-title">
+            <h3>{{ monitor.name }}</h3>
+            <span class="monitor-badge">{{ monitor.display_label }}</span>
+        </div>
+        <a class="monitor-url" href="{{ monitor.url }}" target="_blank" rel="noopener noreferrer">{{ monitor.url }}</a>
+        <dl class="monitor-meta">
+            <div><dt>Интервал</dt><dd>{{ monitor.interval_minutes }} мин</dd></div>
+            <div><dt>Последняя проверка</dt><dd>{{ monitor.last_checked_at|date:"d.m.Y H:i:s"|default:"—" }}</dd></div>
+            <div><dt>Следующая проверка</dt><dd>{% if monitor.is_active %}{{ monitor.next_check_at|date:"d.m.Y H:i:s" }}{% else %}—{% endif %}</dd></div>
+        </dl>
+        {% if monitor.display_state == "restricted" %}
+            <p class="monitor-explanation">Сайт не отвечает, контрольный сайт доступен. Возможны белые списки или сбой самого сайта.</p>
+        {% elif monitor.display_state == "network_down" %}
+            <p class="monitor-explanation">Оба сайта недоступны. Причина не определена — проверьте подключение.</p>
+        {% elif monitor.display_state == "site_down" %}
+            <p class="monitor-explanation">Сайт ответил ошибкой HTTP. По такому ответу нельзя определить режим белых списков.</p>
+        {% elif monitor.display_state == "stale" %}
+            <p class="monitor-explanation">Нет свежих результатов. Текущее состояние подключения неизвестно.</p>
+        {% endif %}
+        <details data-monitor-details="{{ monitor.pk }}">
+            <summary>Последние проверки · {{ monitor.recent_checks|length }}</summary>
+            <p class="monitor-hint">Контрольный сайт: {{ monitor.control_url }}. Проверяется при ошибке основного сайта.</p>
+            <div class="monitor-table-scroll">
+                <table class="monitor-table">
+                    <thead><tr><th>Время</th><th>Состояние</th><th>HTTP</th><th>Ответ</th><th>Контроль</th></tr></thead>
+                    <tbody>
+                    {% for check in monitor.recent_checks %}
+                        <tr>
+                            <td>{{ check.checked_at|date:"d.m H:i:s" }}</td>
+                            <td>{{ check.get_state_display }}{% if check.error_message %}<small>{{ check.error_message }}</small>{% endif %}</td>
+                            <td>{{ check.status_code|default_if_none:"—" }}</td>
+                            <td>{% if check.response_time_ms != None %}{{ check.response_time_ms }} мс{% else %}—{% endif %}</td>
+                            <td>{{ check.control_status_code|default_if_none:"—" }}{% if check.control_error_message %}<small>{{ check.control_error_message }}</small>{% endif %}</td>
+                        </tr>
+                    {% empty %}<tr><td colspan="5">Ожидаем первую проверку.</td></tr>{% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </details>
+    </article>
+{% empty %}<p>Мониторов пока нет. Добавьте сайт через Django Admin.</p>{% endfor %}
+<details class="monitor-notifications" data-monitor-details="notifications">
+    <summary>Уведомления · {{ monitor_notifications|length }}</summary>
+    <ul>
+        {% for notification in monitor_notifications %}
+            <li><time>{{ notification.created_at|date:"d.m.Y H:i" }}</time> {{ notification.message }}</li>
+        {% empty %}<li>Изменений состояния пока нет.</li>{% endfor %}
+    </ul>
+</details>

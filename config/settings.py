@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'django_filters',
     'metrology',
     'dashboard',
+    'monitoring',
 ]
 
 REST_FRAMEWORK = {
