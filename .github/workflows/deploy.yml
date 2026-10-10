@@ -72,7 +72,7 @@ jobs:
         working-directory: /home/adminka/projects/PersonalHub
         run: |
           docker compose -f compose.yaml -f compose.pipertts.yaml ps --all
-          docker compose -f compose.yaml -f compose.pipertts.yaml logs --tail 100 web pipertts db
+          docker compose -f compose.yaml -f compose.pipertts.yaml logs --tail 100 web monitor pipertts db
 
           for container in $(docker compose -f compose.yaml -f compose.pipertts.yaml ps --all --quiet); do
             docker inspect --format '{{.Name}} healthcheck={{json .Config.Healthcheck}} health={{json .State.Health}}' "$container"

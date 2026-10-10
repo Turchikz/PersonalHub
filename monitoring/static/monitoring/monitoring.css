@@ -1,0 +1,28 @@
+.monitor-panel { min-width: 0; }
+.monitor-panel h3 { margin: 0; }
+.monitor-hint { color: var(--text-secondary); font-size: 14px; }
+.monitor-card { border-top: 1px solid var(--border); padding: 18px 0; }
+.monitor-title { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.monitor-badge { border-radius: 999px; padding: 5px 12px; font-size: 14px; font-weight: 600; background: var(--surface-secondary); }
+[data-state="online"] .monitor-badge { color: var(--success); }
+[data-state="restricted"] .monitor-badge { color: #b45309; background: #fef3c7; }
+[data-theme="dark"] [data-state="restricted"] .monitor-badge { color: #fde68a; background: #422006; }
+[data-state="site_down"] .monitor-badge, [data-state="network_down"] .monitor-badge { color: var(--danger); background: var(--danger-soft); }
+[data-state="stale"] .monitor-badge, [data-state="paused"] .monitor-badge, [data-state="unknown"] .monitor-badge { color: var(--text-secondary); }
+.monitor-url { display: inline-block; color: var(--primary); margin-top: 8px; overflow-wrap: anywhere; }
+.monitor-meta { display: flex; flex-wrap: wrap; gap: 16px 32px; margin: 14px 0; font-size: 14px; }
+.monitor-meta dt { color: var(--text-secondary); }
+.monitor-meta dd { margin: 2px 0 0; }
+.monitor-explanation { font-size: 14px; }
+.monitor-panel summary { cursor: pointer; color: var(--text-secondary); }
+.monitor-panel details { margin-top: 12px; }
+.monitor-table-scroll { overflow-x: auto; }
+.monitor-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 12px; text-align: left; }
+.monitor-table th, .monitor-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.monitor-table small { display: block; color: var(--text-secondary); max-width: 280px; overflow-wrap: anywhere; }
+.monitor-notifications ul { padding-left: 20px; font-size: 14px; }
+.monitor-notifications li { margin: 8px 0; }
+.monitor-notifications time { color: var(--text-secondary); }
+.monitor-toast { position: fixed; bottom: 24px; right: 24px; width: min(420px, calc(100vw - 48px)); z-index: 100; background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--primary); border-radius: 12px; padding: 16px; box-shadow: var(--shadow); }
+.monitor-toast[hidden] { display: none; }
+.monitor-toast button { float: right; border: 0; padding: 2px 8px; background: transparent; color: var(--text-secondary); cursor: pointer; font-size: 20px; }

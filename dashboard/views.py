@@ -5,6 +5,7 @@ from django.views.decorators.http import require_POST
 from dashboard.forms import CountdownEventForm
 from dashboard.models import CountdownEvent
 from dashboard.services import PiperTTSError, get_countdown_text, get_speech_audio
+from monitoring.views import dashboard_context
 
 
 def home(request):
@@ -22,6 +23,7 @@ def home(request):
     context = {
         "events": events,
         "form": form,
+        **dashboard_context(),
     }
 
     return render(request, "dashboard/home.html", context)
